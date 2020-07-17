@@ -26,27 +26,25 @@ AddEventHandler("player:getItems", function(target , src)
         if user ~= nil then
             local identifier = user.getIdentifier()
             local charid = user.getSessionVar("charid")
-            for i,k in pairs(invTable) do
-                if k.id == identifier and k.charid == charid then
-                    if _target ==  _source  then
-                        TriggerClientEvent("gui:getItems", _target, k.inventory)
-                    else
-                        TriggerClientEvent("gui:getOtherItems", _source, k.inventory)
-                    end
-                    if _target ==  _source  then
-                        TriggerClientEvent("item:LoadPickups", _target, Pickups)
-                        TriggerClientEvent("player:loadWeapons", _target)
-                    end
-                    check = true
-                    break
 
+            if(invTable[identifier .. "_" .. charid])then
+                if _target ==  _source  then
+                    TriggerClientEvent("gui:getItems", _target, k.inventory)
+                else
+                    TriggerClientEvent("gui:getOtherItems", _source, k.inventory)
                 end
+                if _target ==  _source  then
+                    TriggerClientEvent("item:LoadPickups", _target, Pickups)
+                    TriggerClientEvent("player:loadWeapons", _target)
+                end
+                check = true
             end
+
             if check == false then
                 MySQL.Async.fetchAll('SELECT * FROM user_inventory WHERE `identifier`=@identifier AND `charid`=@charid;', {identifier = identifier, charid = charid}, function(inventory)
                     if inventory[1] ~= nil then
                         local inv = json.decode(inventory[1].items)
-                        table.insert(invTable, {id = identifier, charid = charid , inventory = inv})
+                        invTable[identifier .. "_" .. charid] = {id = identifier, charid = charid , inventory = inv}
                         TriggerClientEvent("gui:getItems", _target, inv)
                         TriggerClientEvent("item:LoadPickups", _target, Pickups)
                         TriggerClientEvent("player:loadWeapons", _target)
@@ -62,7 +60,8 @@ AddEventHandler("player:getItems", function(target , src)
                                 items = json.encode(test)
                             }, function(rowsChanged)
                             end)
-                        table.insert(invTable, {id = identifier, charid = charid , inventory = test})
+
+                        invTable[identifier .. "_" .. charid] = {id = identifier, charid = charid , inventory = test}
                         TriggerClientEvent("gui:getItems", _target, test)
                         TriggerClientEvent("item:LoadPickups", _target, Pickups)
                     end
@@ -88,39 +87,35 @@ AddEventHandler('player:savInvSv', function(source, data)
         if user ~= nil then
             local identifier = user.getIdentifier()
             local charid = user.getSessionVar("charid")
-            for i,k in pairs(invTable) do
-                if k.id == identifier and k.charid == charid then
-                    eq = k.inventory
-                    local liczba_itemow = 0
-                    for name,value in pairs(k.inventory) do
-                        if name ~= nil then
-                            liczba_itemow = liczba_itemow + 1
-                        end
-                        if liczba_itemow > 1 then
-                            if tonumber(value) ~= nil then
-                                if value < 1 then
-                                    eq[name] = nil
-                                end
+
+            if(invTable[identifier .. "_" .. charid])then
+                eq = invTable[identifier .. "_" .. charid].inventory
+                local itemCount = 0
+                for name,value in pairs(invTable[identifier .. "_" .. charid].inventory) do
+                    if name ~= nil then
+                        itemCount = itemCount + 1
+                    end
+                    if itemCount > 1 then
+                        if tonumber(value) ~= nil then
+                            if value < 1 then
+                                eq[name] = nil
                             end
                         end
                     end
-                    if _data ~= nil then
-                        eq = _data
-                        k.inventory = _data
-                    end
-                    MySQL.Async.execute('UPDATE user_inventory SET items = @items WHERE identifier = @identifier AND charid = @charid', {
-                        ['@identifier']  = identifier,
-                        ['@charid']  = charid,
-                        ['@items'] = json.encode(eq)
-                    }, function (rowsChanged)
-                        if rowsChanged == 0 then
-                            print(('user_inventory: Something went wrong saving %s!'):format(identifier .. ":" .. charid))
-                        end
-                    end)
-
-                    break
-
                 end
+                if _data ~= nil then
+                    eq = _data
+                    invTable[identifier .. "_" .. charid].inventory = _data
+                end
+                MySQL.Async.execute('UPDATE user_inventory SET items = @items WHERE identifier = @identifier AND charid = @charid', {
+                    ['@identifier']  = identifier,
+                    ['@charid']  = charid,
+                    ['@items'] = json.encode(eq)
+                }, function (rowsChanged)
+                    if rowsChanged == 0 then
+                        print(('user_inventory: Something went wrong saving %s!'):format(identifier .. ":" .. charid))
+                    end
+                end)
             end
         end
 
@@ -134,10 +129,9 @@ AddEventHandler('playerDropped', function()
         if user ~= nil then
             local identifier = user.getIdentifier()
             local charid = user.getSessionVar("charid")
-            for i,k in pairs(invTable) do
-                if k.id == identifier and k.charid == charid then
-                    invTable[i] = nil
-                end
+
+            if(invTable[identifier .. "_" .. charid])then
+                invTable[identifier .. "_" .. charid] = nil
             end
         end
     end)
@@ -152,12 +146,12 @@ Citizen.CreateThread(function()
         local saved  = 0
         for i,k in pairs(invTable) do
             eq = k.inventory
-            local liczba_itemow = 0
+            local itemCount = 0
             for name,value in pairs(k.inventory) do
                 if name ~= nil then
-                    liczba_itemow = liczba_itemow + 1
+                    itemCount = itemCount + 1
                 end
-                if liczba_itemow > 1 then
+                if itemCount > 1 then
                     if value == 0 then
                         eq[name] = nil
                     end
@@ -195,29 +189,27 @@ AddEventHandler("item:add", function(source, arg)
     TriggerEvent('redemrp:getPlayerFromId', _source, function(user)
         local identifier = user.getIdentifier()
         local charid = user.getSessionVar("charid")
-        for i,k in pairs(invTable) do
-            if k.id == identifier and k.charid == charid then
-                if hash == 1 then
-                    if inventory.checkItem(_source, name) + amount <= inventory.checkLimit(_source,name) then
-                        if k.inventory[name] ~= nil then
-                            local val = invTable[i]["inventory"][name]
-                            newVal = val + amount
-                            invTable[i]["inventory"][name]= tonumber(newVal)
-                        else
-                            invTable[i]["inventory"][name]= tonumber(amount)
-                        end
+
+        if(invTable[identifier .. "_" .. charid])then
+            if hash == 1 then
+                if inventory.checkItem(_source, name) + amount <= inventory.checkLimit(_source,name) then
+                    if k.inventory[name] ~= nil then
+                        local val = invTable[identifier .. "_" .. charid]["inventory"][name]
+                        newVal = val + amount
+                        invTable[identifier .. "_" .. charid]["inventory"][name]= tonumber(newVal)
                     else
-                        local drop = (inventory.checkItem(_source, name) + amount) - inventory.checkLimit(_source, name)
-                        invTable[i]["inventory"][name]= tonumber(inventory.checkLimit(_source, name))
-                        TriggerClientEvent('item:pickup',_source, name, drop , 1)
+                        invTable[identifier .. "_" .. charid]["inventory"][name]= tonumber(amount)
                     end
                 else
-                    invTable[i]["inventory"][name]= {tonumber(amount)  , hash}
-                    TriggerClientEvent("player:giveWeapon", _source, tonumber(amount) , hash )
+                    local drop = (inventory.checkItem(_source, name) + amount) - inventory.checkLimit(_source, name)
+                    invTable[identifier .. "_" .. charid]["inventory"][name]= tonumber(inventory.checkLimit(_source, name))
+                    TriggerClientEvent('item:pickup',_source, name, drop , 1)
                 end
-                TriggerClientEvent("gui:getItems", _source, k.inventory)
-                break
+            else
+                invTable[identifier .. "_" .. charid]["inventory"][name]= {tonumber(amount)  , hash}
+                TriggerClientEvent("player:giveWeapon", _source, tonumber(amount) , hash )
             end
+            TriggerClientEvent("gui:getItems", _source, k.inventory)
         end
 
     end)
@@ -229,21 +221,19 @@ AddEventHandler("item:delete", function(source, arg)
     TriggerEvent('redemrp:getPlayerFromId', _source, function(user)
         local identifier = user.getIdentifier()
         local charid = user.getSessionVar("charid")
-        for i,k in pairs(invTable) do
-            if k.id == identifier and k.charid == charid then
-                if tonumber(invTable[i]["inventory"][name]) ~= nil then
-                    local val = invTable[i]["inventory"][name]
-                    newVal = val - amount
-                    invTable[i]["inventory"][name]= tonumber(newVal)
-                else
-                    invTable[i]["inventory"][name]= nil
-                    TriggerClientEvent("player:removeWeapon", _source, tonumber(amount) , hash )
-                end
-                TriggerClientEvent("gui:getItems", _source, k.inventory)
-                --  TriggerEvent("player:savInvSv", _source)
-                TriggerClientEvent('gui:ReloadMenu', _source)
-                -- TriggerEvent("player:getCrafting", _source)
-                break end
+
+        if(invTable[identifier .. "_" .. charid])then
+            local inventory = invTable[identifier .. "_" .. charid]
+            if tonumber(inventory[name]) ~= nil then
+                local val = inventory[name]
+                newVal = val - amount
+                inventory[name]= tonumber(newVal)
+            else
+                inventory[name]= nil
+                TriggerClientEvent("player:removeWeapon", _source, tonumber(amount) , hash )
+            end
+            TriggerClientEvent("gui:getItems", _source, inventory)
+            TriggerClientEvent('gui:ReloadMenu', _source)
         end
     end)
 end)
@@ -269,15 +259,13 @@ RegisterCommand('giveitem', function(source, args)
         if user.getGroup() == 'superadmin' and _source ~= 0 then
             local identifier = user.getIdentifier()
             local charid = user.getSessionVar("charid")
-            for i,k in pairs(invTable) do
-                if k.id == identifier and k.charid == charid then
-                    local item = args[1]
-                    local amount = args[2]
-                    local test = 1
-                    TriggerEvent("item:add", _source, {item, amount, test}, identifier , charid)
-                    TriggerClientEvent('gui:ReloadMenu', _source)
-                    break
-                end
+
+            if(invTable[identifier .. "_" .. charid])then
+                local item = args[1]
+                local amount = args[2]
+                local test = 1
+                TriggerEvent("item:add", _source, {item, amount, test}, identifier , charid)
+                TriggerClientEvent('gui:ReloadMenu', _source)
             end
         end
     end)
@@ -341,66 +329,18 @@ AddEventHandler("item:SharePickupServer", function(name, obj , amount, x, y, z ,
     }
 end)
 
-RegisterServerEvent("test_lols")
-AddEventHandler("test_lols", function(name, amount , target ,hash)
-    local _target = target
-    local _source = source
-    local _name = name
-    local _amount = amount
-    local all
-    if hash == 1 then
-        local value = inventory.checkItem(_source, name)
-        all = value-amount
-    else
-        all = amount
-    end
-    if all >= 0 then
-        TriggerEvent("item:delete",_source, { name , amount})
-        TriggerEvent("item:add",_target, {name, amount, hash})
-        TriggerClientEvent('gui:ReloadMenu', _source)
-        TriggerClientEvent('gui:ReloadMenu', _target)
-        local DisplayName2 =  name
-        if hash == 1 then
-            if Config.Labels[name] ~= nil then
-                DisplayName2 = Config.Labels[name]
-            end
-        else
-            DisplayName2 = GetLabelTextByHash(hash)
-        end
-        TriggerClientEvent("pNotify:SendNotification",_source, {
-            text = "<img src='nui://redemrp_inventory/html/img/items/"..name..".png' height='40' width='40' style='float:left; margin-bottom:10px; margin-left:20px;' />You gave: ".. DisplayName2.."<br>-"..tonumber(amount).."<br>for "..GetPlayerName(_target),
-            type = "success",
-            timeout = math.random(2000, 3000),
-            layout = "centerRight",
-            queue = "right"
-        })
-        TriggerClientEvent("pNotify:SendNotification",_target, {
-            text = "<img src='nui://redemrp_inventory/html/img/items/"..name..".png' height='40' width='40' style='float:left; margin-bottom:10px; margin-left:20px;' />You got: ".. DisplayName2.."<br>+"..tonumber(amount).."<br>from "..GetPlayerName(_source),
-            type = "success",
-            timeout = math.random(2000, 3000),
-            layout = "centerRight",
-            queue = "right"
-        })
-
-    end
-
-end)
-
 
 function checkItem(_source, name)
     local value = 0
     TriggerEvent('redemrp:getPlayerFromId', _source, function(user)
         local identifier = user.getIdentifier()
         local charid = user.getSessionVar("charid")
-        for i,k in pairs(invTable) do
-            if k.id == identifier and k.charid == charid then
-                value = invTable[i]["inventory"][name]
 
-                if tonumber(value) == nil then
-                    value = 0
+        if(invTable[identifier .. "_" .. charid])then
+            value = invTable[identifier .. "_" .. charid]["inventory"][name]
 
-                end
-                break
+            if tonumber(value) == nil then
+                value = 0
             end
         end
     end)
@@ -452,11 +392,12 @@ AddEventHandler("redemrp_inventory:deleteInv", function(charid, Callback)
             break
         end
     end
-    for i,k in pairs(invTable) do
-        if k.id == id and k.charid == charid then
-            table.remove(invTable , i)
-        end
+
+
+    if(invTable[id .. "_" .. charid])then
+        invTable[identifier .. "_" .. charid] = nil
     end
+
     local Callback = callback
     MySQL.Async.fetchAll('DELETE FROM user_inventory WHERE `identifier`=@identifier AND `charid`=@charid;', {identifier = id, charid = charid}, function(result)
         if result then
