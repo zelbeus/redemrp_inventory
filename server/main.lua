@@ -193,7 +193,7 @@ AddEventHandler("item:add", function(source, arg)
         if(invTable[identifier .. "_" .. charid])then
             if hash == 1 then
                 if inventory.checkItem(_source, name) + amount <= inventory.checkLimit(_source,name) then
-                    if k.inventory[name] ~= nil then
+                    if invTable[identifier .. "_" .. charid].inventory[name] ~= nil then
                         local val = invTable[identifier .. "_" .. charid]["inventory"][name]
                         newVal = val + amount
                         invTable[identifier .. "_" .. charid]["inventory"][name]= tonumber(newVal)
@@ -209,7 +209,7 @@ AddEventHandler("item:add", function(source, arg)
                 invTable[identifier .. "_" .. charid]["inventory"][name]= {tonumber(amount)  , hash}
                 TriggerClientEvent("player:giveWeapon", _source, tonumber(amount) , hash )
             end
-            TriggerClientEvent("gui:getItems", _source, k.inventory)
+            TriggerClientEvent("gui:getItems", _source, invTable[identifier .. "_" .. charid].inventory)
         end
 
     end)
@@ -223,7 +223,7 @@ AddEventHandler("item:delete", function(source, arg)
         local charid = user.getSessionVar("charid")
 
         if(invTable[identifier .. "_" .. charid])then
-            local inventory = invTable[identifier .. "_" .. charid]
+            local inventory = invTable[identifier .. "_" .. charid].inventory
             if tonumber(inventory[name]) ~= nil then
                 local val = inventory[name]
                 newVal = val - amount
