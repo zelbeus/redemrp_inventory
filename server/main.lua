@@ -339,8 +339,8 @@ function checkItem(_source, name)
         if(invTable[identifier .. "_" .. charid])then
             value = invTable[identifier .. "_" .. charid]["inventory"][name]
 
-            if tonumber(value) == nil then
-                value = 0
+            if value then
+                value = 1
             end
         end
     end)
