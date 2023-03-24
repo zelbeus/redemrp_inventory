@@ -1415,6 +1415,9 @@ function SharedInventoryFunctions.getItem(source, name, meta)
             data.ItemInfo = item.getData()
             data.ItemMeta = item.getMeta()
             data.ItemAmount = item.getAmount()
+            if data.ItemMeta.expire then 
+                data.ItemInfo.expire_hours = item.getExpireHours()
+            end
             function data.getAllItemOfName(name)
                 local fullInventory = PrepareToOutput(Inventory[identifier .. "_" .. charid])
                 local output = {}

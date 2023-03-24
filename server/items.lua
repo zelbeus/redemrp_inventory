@@ -107,7 +107,6 @@ function PrepareToOutput(items)
             local showmin = m.expire.min
             if showmin < 10 then showmin = "0"..showmin end
             local diff_hours = k.getExpireHours()
-            print(diff_hours)
             local color = "white"
             if diff_hours < 1 then color = "red" elseif diff_hours > 0 and diff_hours < 24 then color = "orange" elseif diff_hours >= 24 then color = "green" end
             desc = desc.."<br><span style='color:"..color.."'>Expire: "..m.expire.year..". "..showmonth..". "..showday.."., "..showhour..":"..showmin.."</span>"
