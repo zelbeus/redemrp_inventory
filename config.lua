@@ -47,7 +47,9 @@ Config.Items = {
         canBeUsed = true,
         limit = 200,
         imgsrc = "items/water.png",
-        type = "item_standard"
+        type = "item_standard",
+        model = "p_water01x",
+        expire = 50, --days
     },
     ["bandage"] = {
         label = "Bandage",

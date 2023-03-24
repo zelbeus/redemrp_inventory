@@ -942,6 +942,19 @@ function addItem(name, amount, meta, identifier, charid, lvl)
             local generetedUid = string.format("%03d%04d", numBase0, numBase1)
             _meta.uid = generetedUid
         end
+        if not _meta.expire and itemData.type == "item_standard" and itemData.expire then 
+            local year, month, day, hour, minute, day_hour = tonumber(os.date('%Y')), tonumber(os.date('%m')), tonumber(os.date('%d')), tonumber(os.date('%H')), tonumber(os.date('%M')), 24*60*60
+            local a = os.time{year=year, month=month, day=day, min = minute, hour = hour}
+            local expire = (day_hour * itemData.expire ) + a
+            local expire_date = os.date("*t", expire)
+            local expire2 = {year = expire_date.year, month = expire_date.month, day = expire_date.day, hour = expire_date.hour, min = expire_date.min}
+
+            local numBase0 = math.random(100, 999)
+            local numBase1 = math.random(0, 9999)
+            local generetedUid = string.format("%03d%04d", numBase0, numBase1)
+            _meta.uid = generetedUid
+            _meta.expire = expire2
+        end
         local item, id = getInventoryItemFromName(_name, Inventory[identifier .. "_" .. charid], getMetaOutput(meta))
         if not item then
             if itemData.type == "item_standard" then
