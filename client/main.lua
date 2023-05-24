@@ -680,16 +680,20 @@ end
 
 RegisterNetEvent(
     "redemrp_inventory:CreatePickup",
-    function(name, amount, meta, label, img)
+    function(name, amount, meta, label, img, info)
         local ped = PlayerPedId()
         local coords = GetEntityCoords(ped)
         local forward = GetEntityForwardVector(ped)
         local x, y, z = table.unpack(coords + forward * 1.6)
-        while not HasModelLoaded(GetHashKey("P_COTTONBOX01X")) do
+	local model = GetHashKey("P_COTTONBOX01X")
+	if info.model then 
+	    model = GetHashKey(info.model)
+	end
+        while not HasModelLoaded(model) do
             Wait(500)
-            modelrequest(GetHashKey("P_COTTONBOX01X"))
+            modelrequest(model)
         end
-        local obj = CreateObject("P_COTTONBOX01X", x, y, z, true, true, true)
+        local obj = CreateObject(model, x, y, z, true, true, true)
         PlaceObjectOnGroundProperly(obj)
         SetEntityAsMissionEntity(obj, true, true)
         FreezeEntityPosition(obj, true)
