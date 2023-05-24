@@ -433,7 +433,8 @@ AddEventHandler("redemrp_inventory:drop",function(data, letterSend)
                     data.amount,
                     data.meta,
                     itemData.label,
-                    itemData.imgsrc
+                    itemData.imgsrc,
+		    itemData
                 )
             end
             if itemData.type == "item_weapon" then
@@ -1464,7 +1465,8 @@ function SharedInventoryFunctions.getItem(source, name, meta)
                                     amount - canBeAdded,
                                     data.ItemMeta,
                                     data.ItemInfo.label,
-                                    data.ItemInfo.imgsrc
+                                    data.ItemInfo.imgsrc,
+				    data.ItemInfo
                                 )
                             end
                         end
@@ -1476,7 +1478,8 @@ function SharedInventoryFunctions.getItem(source, name, meta)
                             amount,
                             data.ItemMeta,
                             data.ItemInfo.label,
-                            data.ItemInfo.imgsrc
+                            data.ItemInfo.imgsrc,
+			    data.ItemInfo
                         )
                         TriggerClientEvent("redemrp_inventory:removeWeapon", _source, data.ItemInfo.weaponHash)
                     end
@@ -1533,7 +1536,8 @@ function SharedInventoryFunctions.getItem(source, name, meta)
                                     amount - canBeAdded,
                                     meta or {},
                                     data.ItemInfo.label,
-                                    data.ItemInfo.imgsrc
+                                    data.ItemInfo.imgsrc,
+                                    data.ItemInfo
                                 )
                             else
                                 output = false
@@ -1549,7 +1553,8 @@ function SharedInventoryFunctions.getItem(source, name, meta)
                                 amount,
                                 meta or {},
                                 data.ItemInfo.label,
-                                data.ItemInfo.imgsrc
+                                data.ItemInfo.imgsrc,
+                                data.ItemInfo
                             )
                         else
                             output = addItem(name, amount, meta, identifier, charid, lvl)
